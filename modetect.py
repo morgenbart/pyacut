@@ -3,7 +3,7 @@
 # Webcam Motion Detector 
   
 # importing OpenCV, time and Pandas library 
-import cv2, time, pandas, sys 
+import cv2, os, time, pandas, sys 
 # importing datetime class from datetime library 
 from datetime import datetime
   
@@ -15,7 +15,8 @@ static_back_b = None
 motion_list = [] 
   
 # Capturing video 
-video = cv2.VideoCapture(sys.argv[1]) 
+clipname=sys.argv[1]
+video = cv2.VideoCapture(clipname) 
 fps = video.get(cv2.CAP_PROP_FPS)
 fpsr = int(round(fps))
 print(f"fps {fps}, rounded {fpsr}.")
@@ -76,15 +77,33 @@ while True:
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3) 
   
     
+    timecount = video.get(cv2.CAP_PROP_POS_MSEC)
     if motion != previous_motion_state:
-        print(f"motion state changed from {previous_motion_state} to"
-                f" {motion} at own frame count {framecount}, timecount {video.get(cv2.CAP_PROP_POS_MSEC)}, framecount {video.get(cv2.CAP_PROP_POS_FRAMES)}, from begin {datetime.now() - begintime}.")
+        print(f"At {datetime.now() - begintime}.motion state changed from "
+              f"{previous_motion_state} to  {motion} own frame count "
+              f"{framecount}, timecount {timecount}, framecount "
+              f"{video.get(cv2.CAP_PROP_POS_FRAMES)}.")
         previous_motion_state = motion
+        if len(motion_list) == 0:
+            motion_list.append((0, ))
+        m = motion_list.pop()
         if motion == 1:
-            motion_list.append((framecount,))
+            if len(m) == 1:
+                if (timecount - m[0] < 1000):
+                    motion_list.append(m)
+                else:
+                    motion_list.append((timecount, ))
+            else:
+                if (timecount - m[1] < 1000):
+                    motion_list.append((m[0], ))
+                else:
+                    motion_list.append(m)
+                    motion_list.append((timecount, ))
+
         else:
-            x = motion_list.pop()
-            motion_list.append((x[0], framecount))
+            if (timecount - m[0] > 1000):
+                motion_list.append((m[0], timecount))
+        print(motion_list)
 
     if framecount % fpsr == 0:
         if static_back_b is None:
@@ -103,11 +122,11 @@ while True:
     # intensity difference greater than 30 it will appear white 
     #cv2.imshow("t", resize(thresh_frame, 25)) 
     # Displaying color frame with contour of motion of object 
-    cv2.imshow("c", resize(frame, 25)) 
+    cv2.imshow("c", resize(frame, 30)) 
     #cv2.moveWindow("g", 0, 0)
     #cv2.moveWindow("d", 300, 0)
     #cv2.moveWindow("t", 700, 0)
-    cv2.moveWindow("c", 0, 400)
+    cv2.moveWindow("c", 0, 0)
 
     key = cv2.waitKey(1) 
     # if q entered whole process will stop 
@@ -115,10 +134,29 @@ while True:
         # if something is movingthen it append the end time of movement 
         break
 
-print(motion_list)
-print(framecount)
   
 video.release() 
 # Destroying all the windows 
 cv2.destroyAllWindows() 
+
+if len(motion_list) > 0:
+    m = motion_list.pop()
+    if len(m) < 2:
+        motion_list.append((m[0], timecount))
+    else:
+        motion_list.append(m)
+print(f"Read {framecount} frames.")
+if len(motion_list) > 0:
+    for l in motion_list:
+        print(l)
+
+    import moviepy.editor as mvpye
+    clip = mvpye.VideoFileClip(clipname)
+    subclips = [] 
+    for l in motion_list:
+        subclips.append(clip.subclip(l[0] / 1000, l[1] / 1000))
+    result = mvpye.concatenate_videoclips(subclips)
+    result.write_videofile(os.path.basename(clipname) + "-cut.mp4")
+else:
+    print("No bigger motion detected.")
 
