@@ -16,8 +16,9 @@ motion_list = []
   
 # Capturing video 
 video = cv2.VideoCapture(sys.argv[1]) 
-fpsr = int(video.get(cv2.CAP_PROP_FPS))
-print(fpsr)
+fps = video.get(cv2.CAP_PROP_FPS)
+fpsr = int(round(fps))
+print(f"fps {fps}, rounded {fpsr}.")
 
 def resize(img, scale_percent):
     width = int(img.shape[1] * scale_percent / 100)
