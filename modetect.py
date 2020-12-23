@@ -9,19 +9,15 @@ from datetime import datetime
   
 # Assigning our static_back to None 
 static_back = None
+static_back_b = None
   
 # List when any moving object appear 
-motion_list = [ None, None ] 
-  
-# Time of movement 
-time = [] 
-  
-# Initializing DataFrame, one column is start  
-# time and other column is end time 
-df = pandas.DataFrame(columns = ["Start", "End"]) 
+motion_list = [] 
   
 # Capturing video 
 video = cv2.VideoCapture(sys.argv[1]) 
+fpsr = int(video.get(cv2.CAP_PROP_FPS))
+print(fpsr)
 
 def resize(img, scale_percent):
     width = int(img.shape[1] * scale_percent / 100)
@@ -30,16 +26,13 @@ def resize(img, scale_percent):
     return cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
 
 framecount = 0  
-motion = 0
+previous_motion_state = 0
+begintime=datetime.now()
 # Infinite while loop to treat stack of image as video 
 while True: 
     # Reading frame(image) from video 
     check, frame = video.read() 
     if not check:
-        print("no frame.")
-        if motion == 1: 
-            print("no frame, appending end")
-            time.append(datetime.now()) 
         break
 
     framecount += 1 
@@ -56,10 +49,9 @@ while True:
   
     # In first iteration we assign the value  
     # of static_back to our first frame 
-    if static_back is None:  
+    if static_back is None:
         static_back = gray 
-        continue
-  
+
     # Difference between static background  
     # and current frame(which is GaussianBlur) 
     diff_frame = cv2.absdiff(static_back, gray) 
@@ -74,7 +66,7 @@ while True:
                        cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) 
   
     for contour in cnts: 
-        if cv2.contourArea(contour) < 10000: 
+        if cv2.contourArea(contour) < 2000: 
             continue
         motion = 1
   
@@ -82,61 +74,50 @@ while True:
         # making green rectangle arround the moving object 
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3) 
   
-    print(f"Framecount: {framecount}, motion: {motion}.")
-    # Appending status of motion 
-    motion_list.append(motion) 
-  
-    motion_list = motion_list[-2:] 
-  
-    # Appending Start time of motion 
-    if motion_list[-1] == 1 and motion_list[-2] == 0: 
-        time.append(datetime.now()) 
-  
-    # Appending End time of motion 
-    if motion_list[-1] == 0 and motion_list[-2] == 1: 
-        time.append(datetime.now()) 
+    
+    if motion != previous_motion_state:
+        print(f"motion state changed from {previous_motion_state} to"
+                f" {motion} at own frame count {framecount}, timecount {video.get(cv2.CAP_PROP_POS_MSEC)}, framecount {video.get(cv2.CAP_PROP_POS_FRAMES)}, from begin {datetime.now() - begintime}.")
+        previous_motion_state = motion
+        if motion == 1:
+            motion_list.append((framecount,))
+        else:
+            x = motion_list.pop()
+            motion_list.append((x[0], framecount))
+
+    if framecount % fpsr == 0:
+        if static_back_b is None:
+            static_back = gray
+            static_back_b = gray
+        else:
+            static_back = static_back_b
+            static_back_b = gray
   
     # Displaying image in gray_scale 
-    cv2.imshow("g", resize(gray, 25)) 
-  
+    #cv2.imshow("g", resize(static_back, 25)) 
     # Displaying the difference in currentframe to 
     # the staticframe(very first_frame) 
-    cv2.imshow("d", resize(diff_frame, 25)) 
-  
+    #cv2.imshow("d", resize(diff_frame, 25)) 
     # Displaying the black and white image in which if 
     # intensity difference greater than 30 it will appear white 
-    cv2.imshow("t", resize(thresh_frame, 25)) 
-  
+    #cv2.imshow("t", resize(thresh_frame, 25)) 
     # Displaying color frame with contour of motion of object 
     cv2.imshow("c", resize(frame, 25)) 
+    #cv2.moveWindow("g", 0, 0)
+    #cv2.moveWindow("d", 300, 0)
+    #cv2.moveWindow("t", 700, 0)
+    cv2.moveWindow("c", 0, 400)
 
-    cv2.moveWindow("g", 0, 0)
-    cv2.moveWindow("d", 250, 0)
-    cv2.moveWindow("t", 500, 0)
-    cv2.moveWindow("c", 750, 0)
-    
-  
     key = cv2.waitKey(1) 
     # if q entered whole process will stop 
     if key == ord('q'): 
         # if something is movingthen it append the end time of movement 
-        if motion == 1: 
-            time.append(datetime.now()) 
         break
-  
-# Appending time of motion in DataFrame 
-print(f"len time: {len(time)}.")
-for i in range(0, len(time), 2): 
-    print(f"i: {i}")
-    print(f"start {time[i]}")
-    print(f"end {time[i + 1]}")
-    df = df.append({"Start":time[i], "End":time[i + 1]}, ignore_index = True) 
-  
-# Creating a CSV file in which time of movements will be saved 
-df.to_csv("Time_of_movements.csv") 
+
+print(motion_list)
+print(framecount)
   
 video.release() 
-  
 # Destroying all the windows 
 cv2.destroyAllWindows() 
 

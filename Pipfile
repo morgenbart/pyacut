@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 opencv-python = "*"
 pandas = "*"
+moviepy = "*"
+numpy = "*"
 
 [dev-packages]
 ipython = "*"
