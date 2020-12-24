@@ -6,6 +6,8 @@
 import cv2, os, time, pandas, sys 
 # importing datetime class from datetime library 
 from datetime import datetime
+
+show_image = False
   
 # Assigning our static_back to None 
 static_back = None
@@ -113,26 +115,12 @@ while True:
             static_back = static_back_b
             static_back_b = gray
   
-    # Displaying image in gray_scale 
-    #cv2.imshow("g", resize(static_back, 25)) 
-    # Displaying the difference in currentframe to 
-    # the staticframe(very first_frame) 
-    #cv2.imshow("d", resize(diff_frame, 25)) 
-    # Displaying the black and white image in which if 
-    # intensity difference greater than 30 it will appear white 
-    #cv2.imshow("t", resize(thresh_frame, 25)) 
-    # Displaying color frame with contour of motion of object 
-    cv2.imshow("c", resize(frame, 30)) 
-    #cv2.moveWindow("g", 0, 0)
-    #cv2.moveWindow("d", 300, 0)
-    #cv2.moveWindow("t", 700, 0)
-    cv2.moveWindow("c", 0, 0)
-
-    key = cv2.waitKey(1) 
-    # if q entered whole process will stop 
-    if key == ord('q'): 
-        # if something is movingthen it append the end time of movement 
-        break
+    if show_image:
+        cv2.imshow("c", resize(frame, 30)) 
+        cv2.moveWindow("c", 0, 0)
+        key = cv2.waitKey(1) 
+        if key == ord('q'): 
+            break
 
   
 video.release() 
