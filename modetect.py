@@ -1,6 +1,6 @@
-# From https://www.geeksforgeeks.org/webcam-motion-detector-python/ on 2020-12-22.
-# Python program to implement  
-# Webcam Motion Detector 
+# Python program to find longer action scenes in movies and cut out scenes
+# where nothing is happening.
+# Based on https://www.geeksforgeeks.org/webcam-motion-detector-python/ on 2020-12-22.
   
 # importing OpenCV, time and Pandas library 
 import cv2, os, time, pandas, sys 
