@@ -3,7 +3,7 @@
 # Based on https://www.geeksforgeeks.org/webcam-motion-detector-python/ on 2020-12-22.
   
 # importing OpenCV, time and Pandas library 
-import cv2, os, time, pandas, sys 
+import cv2, os, time, sys 
 # importing datetime class from datetime library 
 from datetime import datetime
 
