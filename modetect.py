@@ -19,6 +19,7 @@ clipname=sys.argv[1]
 video = cv2.VideoCapture(clipname) 
 fps = video.get(cv2.CAP_PROP_FPS)
 fpsr = int(round(fps))
+fc = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 print(f"fps {fps}, rounded {fpsr}.")
 
 def resize(img, scale_percent):
@@ -34,10 +35,13 @@ begintime=datetime.now()
 while True: 
     # Reading frame(image) from video 
     check, frame = video.read() 
+    framecount += 1
     if not check:
-        break
+        if framecount <= fc:
+            continue
+        else:
+            break
 
-    framecount += 1 
   
     # Initializing motion = 0(no motion) 
     motion = 0
